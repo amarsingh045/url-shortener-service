@@ -1,0 +1,73 @@
+spring:
+  application:
+    name: url_shortener_service
+  datasource:
+    url: jdbc:h2:mem:urlshortener;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  h2:
+    console:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
+  tracing:
+    enabled: ${TRACING_ENABLED:false}
+    sampling:
+      probability: 1.0
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name}]"
+    correlation: "[traceId=%X{traceId:-}, spanId=%X{spanId:-}] "
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      shortenerCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 5
+        minimumNumberOfCalls: 3
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 2
+        slowCallDurationThreshold: 2s
+        ignoreExceptions:
+          - com.schwab.exception.InvalidUrlException
+          - com.schwab.exception.ShortCodeNotFoundException
+  bulkhead:
+    instances:
+      shortenerBulkhead:
+        maxConcurrentCalls: 5
+        maxWaitDuration: 200ms
+  retry:
+    instances:
+      shortenerRetry:
+        maxAttempts: 3
+        waitDuration: 200ms
+        ignoreExceptions:
+          - com.schwab.exception.InvalidUrlException
+          - com.schwab.exception.ShortCodeNotFoundException
+  timelimiter:
+    instances:
+      shortenerTimeLimiter:
+        timeoutDuration: 2s
