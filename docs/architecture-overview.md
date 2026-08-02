@@ -15,9 +15,10 @@ The following image is the primary high-level architecture diagram for submissio
 How to interpret it for this prototype:
 - The core URL shortener service box matches the implemented Spring Boot application
 - Database is implemented using H2 in-memory storage
+- Caching is implemented using an in-process in-memory `ConcurrentHashMap` in the persistence adapter
 - Analytics and monitoring are implemented through Micrometer, Actuator, Prometheus metrics exposure, and application logging
 - Circuit breaker and bulkhead isolation are implemented through Resilience4j annotations in the service layer
-- API Gateway, Cache, and External API blocks should be treated as conceptual extension points in the high-level design, not as fully implemented runtime components in this prototype
+- API Gateway and External API blocks should be treated as conceptual extension points in the high-level design, not as fully implemented runtime components in this prototype
 - The Mermaid diagrams below show the exact current implementation structure and request flow in the codebase
 
 ```mermaid
@@ -43,7 +44,7 @@ flowchart LR
 - `UrlShortenerServicePort`: service contract used by the controller
 - `UrlShortenerService`: service-layer implementation with resilience, validation, short-code generation, collision retry, and metrics
 - `ShortUrlRepositoryPort`: domain-facing persistence contract
-- `JpaShortUrlRepositoryAdapter`: adapter that translates domain objects to JPA entities and back using MapStruct and converts duplicate-key writes into collision exceptions
+- `JpaShortUrlRepositoryAdapter`: adapter that translates domain objects to JPA entities and back using MapStruct, keeps an in-memory short-code cache (`ConcurrentHashMap`), and converts duplicate-key writes into collision exceptions
 - `ShortUrlMapper`: MapStruct mapper between `ShortUrl` and `ShortUrlEntity`
 - `ShortUrlEntityRepository`: Spring Data JPA repository
 - `GlobalExceptionHandler`: maps domain exceptions to API responses
@@ -200,6 +201,7 @@ sequenceDiagram
 
 ## Key Decisions
 - Use H2 in-memory storage for a fast, runnable prototype instead of production-grade persistence
+- Use an in-memory cache in the persistence adapter to accelerate repeated short-code lookups in the prototype
 - Keep resilience at the service layer so controllers remain thin and HTTP-focused
 - Use MapStruct instead of manual mapping to keep adapter code small and consistent
 - Use a repository port and adapter to preserve separation between domain logic and persistence technology
@@ -208,6 +210,13 @@ sequenceDiagram
 
 ## Known Limits
 - Data is not durable across restarts because H2 is in-memory
+- Cache data is local to a single process and is not shared across instances
 - Short code generation is simple and not optimized for high-scale collision avoidance, though collisions are retried up to a fixed limit
 - Analytics are aggregate-only and do not expose per-link reporting
 - No authentication, authorization, or rate limiting is implemented
+
+## Production Upgrade Path
+- Replace H2 with a production-grade SQL or NoSQL database based on scale, consistency, and operational requirements
+- Replace the in-process cache with a distributed cache such as Redis or ElastiCache for multi-instance consistency
+- Keep DB-level uniqueness for `shortCode` and keep bounded insert-retry logic for collision recovery
+- Revisit cache invalidation strategy and TTL settings when introducing distributed caching

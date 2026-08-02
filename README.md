@@ -47,6 +47,13 @@ curl -X POST http://localhost:8080/api/shorten \
 ## Notes
 
 - The service uses H2 in-memory storage for prototype simplicity
+- The persistence adapter uses an in-memory `ConcurrentHashMap` cache for short-code lookups
 - Mapping between domain and persistence objects is handled by MapStruct
 - Acceptance tests are written in Gherkin and run headlessly using Cucumber + MockMvc
 - Short-code collisions are handled with a database-backed uniqueness check plus bounded retry during URL creation
+
+## Production Considerations
+
+- Replace H2 in-memory storage with a production-grade SQL or NoSQL database (for example PostgreSQL, MySQL, or DynamoDB)
+- Replace the local in-memory cache with a distributed cache (for example Redis or ElastiCache)
+- Keep DB uniqueness constraints for `shortCode` and retain bounded retry logic for collision recovery
