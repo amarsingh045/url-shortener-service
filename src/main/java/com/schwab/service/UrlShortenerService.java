@@ -43,6 +43,7 @@ public class UrlShortenerService implements UrlShortenerServicePort {
     public ShortenResponse shorten(ShortenRequest request) {
         shortenCounter.increment();
         validateUrl(request.getLongUrl());
+        ShortCodeAlreadyExistsException lastCollision = null;
         for (int attempt = 1; attempt <= MAX_SHORT_CODE_GENERATION_ATTEMPTS; attempt++) {
             String shortCode = generateUniqueShortCode();
             ShortUrl shortUrl = new ShortUrl(shortCode, request.getLongUrl());
@@ -50,12 +51,10 @@ public class UrlShortenerService implements UrlShortenerServicePort {
                 repository.save(shortUrl);
                 return new ShortenResponse(shortCode, request.getLongUrl());
             } catch (ShortCodeAlreadyExistsException ex) {
-                if (attempt == MAX_SHORT_CODE_GENERATION_ATTEMPTS) {
-                    throw new ShortCodeAlreadyExistsException("Unable to allocate a unique short code", ex);
-                }
+                lastCollision = ex;
             }
         }
-        throw new ShortCodeAlreadyExistsException("Unable to allocate a unique short code", new IllegalStateException("Retry attempts exhausted"));
+        throw new ShortCodeAlreadyExistsException("Unable to allocate a unique short code", lastCollision);
     }
 
     @Override

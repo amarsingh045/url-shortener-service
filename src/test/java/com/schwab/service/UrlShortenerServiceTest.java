@@ -125,4 +125,19 @@ class UrlShortenerServiceTest {
         assertEquals("https://example.com/retry", response.getLongUrl());
         verify(repository, times(3)).save(any());
     }
+
+    @Test
+    void shouldFailAfterMaxCollisionRetries() {
+        when(repository.existsByShortCode(any())).thenReturn(false);
+        when(repository.save(any())).thenThrow(new ShortCodeAlreadyExistsException("Short code already exists", null));
+
+        ShortenRequest request = new ShortenRequest();
+        request.setLongUrl("https://example.com/retry-fail");
+
+        ShortCodeAlreadyExistsException ex = assertThrows(ShortCodeAlreadyExistsException.class,
+                () -> service.shorten(request));
+
+        assertEquals("Unable to allocate a unique short code", ex.getMessage());
+        verify(repository, times(5)).save(any());
+    }
 }
