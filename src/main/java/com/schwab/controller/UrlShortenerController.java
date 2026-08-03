@@ -1,6 +1,6 @@
 package com.schwab.controller;
 
-import com.schwab.domain.UrlShortenerServicePort;
+import com.schwab.application.UrlShortenerUseCase;
 import com.schwab.dto.AnalyticsResponse;
 import com.schwab.dto.ShortenRequest;
 import com.schwab.dto.ShortenResponse;
@@ -24,9 +24,9 @@ import org.springframework.web.servlet.view.RedirectView;
 @Tag(name = "URL Shortener", description = "Shorten URLs and inspect analytics")
 public class UrlShortenerController {
 
-    private final UrlShortenerServicePort urlShortenerService;
+    private final UrlShortenerUseCase urlShortenerService;
 
-    public UrlShortenerController(UrlShortenerServicePort urlShortenerService) {
+    public UrlShortenerController(UrlShortenerUseCase urlShortenerService) {
         this.urlShortenerService = urlShortenerService;
     }
 

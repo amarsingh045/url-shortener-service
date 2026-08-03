@@ -1,4 +1,4 @@
-package com.schwab.service;
+package com.schwab.application;
 
 import com.schwab.domain.ShortUrl;
 import com.schwab.domain.ShortUrlRepositoryPort;

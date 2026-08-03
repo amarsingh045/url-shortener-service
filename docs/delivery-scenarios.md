@@ -24,7 +24,7 @@ A new URL shortener service must be created from scratch with no existing codeba
 ### Validation
 - End-to-end HTTP tests pass
 - Headless Cucumber scenarios pass
-- JaCoCo coverage gate is configured at 80%
+- JaCoCo coverage gate is configured at 90%
 
 ## 2. Brownfield Scenario
 ### Situation
@@ -37,9 +37,9 @@ An existing codebase already has overlapping implementations or inconsistent lay
 4. Verify wiring, mapping, resilience, and tests after the refactor
 
 ### Execution In This Prototype
-- The active runtime path was confirmed through `UrlShortenerServicePort`
+- The active runtime path is now represented by the application-layer `UrlShortenerUseCase`
 - Unused duplicate service implementations were removed
-- The resilience-oriented implementation was moved into the `service` package and renamed to `UrlShortenerService`
+- The resilience-oriented implementation is placed in the `application` package as `UrlShortenerService`
 - Repository mapping was switched from manual conversion to MapStruct-backed conversion
 - Collision handling was hardened so duplicate short-code inserts are retried instead of silently depending only on a pre-check
 

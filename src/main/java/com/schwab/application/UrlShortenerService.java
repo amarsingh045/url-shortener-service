@@ -1,14 +1,13 @@
-package com.schwab.service;
+package com.schwab.application;
 
 import com.schwab.domain.ShortUrl;
 import com.schwab.domain.ShortUrlRepositoryPort;
-import com.schwab.domain.UrlShortenerServicePort;
 import com.schwab.dto.AnalyticsResponse;
 import com.schwab.dto.ShortenRequest;
 import com.schwab.dto.ShortenResponse;
 import com.schwab.exception.InvalidUrlException;
-import com.schwab.exception.ShortCodeNotFoundException;
 import com.schwab.exception.ShortCodeAlreadyExistsException;
+import com.schwab.exception.ShortCodeNotFoundException;
 import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -21,7 +20,7 @@ import java.net.URISyntaxException;
 import java.util.Random;
 
 @Service
-public class UrlShortenerService implements UrlShortenerServicePort {
+public class UrlShortenerService implements UrlShortenerUseCase {
     private static final String ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int MAX_SHORT_CODE_GENERATION_ATTEMPTS = 5;
     private final ShortUrlRepositoryPort repository;

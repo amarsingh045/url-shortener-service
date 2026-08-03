@@ -18,7 +18,7 @@ The project uses multiple layers of automated validation.
 
 ### 4. Coverage enforcement
 - JaCoCo is configured in Maven
-- The `verify` phase enforces a minimum line coverage ratio of 80%
+- The `verify` phase enforces a minimum line coverage ratio of 90%
 
 ## What Is Covered Well
 - Successful URL shortening

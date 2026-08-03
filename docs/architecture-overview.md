@@ -41,7 +41,7 @@ flowchart LR
 
 ## Main Components
 - `UrlShortenerController`: HTTP entry point for `/api/shorten`, `/api/{shortCode}`, and `/api/analytics`
-- `UrlShortenerServicePort`: service contract used by the controller
+- `UrlShortenerUseCase`: application-layer use-case contract used by the controller
 - `UrlShortenerService`: service-layer implementation with resilience, validation, short-code generation, collision retry, and metrics
 - `ShortUrlRepositoryPort`: domain-facing persistence contract
 - `JpaShortUrlRepositoryAdapter`: adapter that translates domain objects to JPA entities and back using MapStruct, keeps an in-memory short-code cache (`ConcurrentHashMap`), and converts duplicate-key writes into collision exceptions
@@ -79,7 +79,7 @@ flowchart TD
 	Client[Client / Browser / API Consumer]
 
 	Controller[UrlShortenerController]
-	Port[UrlShortenerServicePort]
+	Port[UrlShortenerUseCase]
 	Service[UrlShortenerService<br/>Business logic + Resilience4j + Metrics]
 	RepoPort[ShortUrlRepositoryPort]
 	Adapter[JpaShortUrlRepositoryAdapter]
@@ -118,7 +118,7 @@ flowchart TD
 ## Control Flow
 ### Shorten flow
 1. Client sends `POST /api/shorten`
-2. `UrlShortenerController` delegates to `UrlShortenerServicePort`
+2. `UrlShortenerController` delegates to `UrlShortenerUseCase`
 3. `UrlShortenerService` validates the URL and generates a candidate short code
 4. `JpaShortUrlRepositoryAdapter` maps the domain object to `ShortUrlEntity` using `ShortUrlMapper`
 5. Repository persists the entity under a database uniqueness constraint on `shortCode`

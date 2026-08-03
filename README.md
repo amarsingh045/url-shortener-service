@@ -46,6 +46,9 @@ curl -X POST http://localhost:8080/api/shorten \
 
 ## Notes
 
+- The controller depends on the application-layer use-case contract `UrlShortenerUseCase`
+- Business orchestration is implemented in `com.schwab.application.UrlShortenerService`
+- Domain keeps core model and repository port abstractions, while infrastructure provides adapter implementations
 - The service uses H2 in-memory storage for prototype simplicity
 - The persistence adapter uses an in-memory `ConcurrentHashMap` cache for short-code lookups
 - Mapping between domain and persistence objects is handled by MapStruct
