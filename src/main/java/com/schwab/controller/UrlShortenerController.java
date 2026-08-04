@@ -1,5 +1,8 @@
 package com.schwab.controller;
 
+import com.schwab.application.CreateShortUrlCommand;
+import com.schwab.application.CreateShortUrlResult;
+import com.schwab.application.GetAnalyticsResult;
 import com.schwab.application.UrlShortenerUseCase;
 import com.schwab.dto.AnalyticsResponse;
 import com.schwab.dto.ShortenRequest;
@@ -35,7 +38,8 @@ public class UrlShortenerController {
     @ApiResponse(responseCode = "400", description = "Invalid URL payload")
     @PostMapping("/shorten")
     public ResponseEntity<ShortenResponse> shorten(@RequestBody ShortenRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(urlShortenerService.shorten(request));
+        CreateShortUrlResult result = urlShortenerService.shorten(new CreateShortUrlCommand(request.getLongUrl()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ShortenResponse(result.shortCode(), result.longUrl()));
     }
 
     @Operation(summary = "Redirect to the original URL", description = "Resolves a short code and redirects to the original URL")
@@ -53,6 +57,7 @@ public class UrlShortenerController {
     @ApiResponse(responseCode = "200", description = "Analytics returned", content = @Content(schema = @Schema(implementation = AnalyticsResponse.class)))
     @GetMapping("/analytics")
     public ResponseEntity<AnalyticsResponse> analytics() {
-        return ResponseEntity.ok(urlShortenerService.analytics());
+        GetAnalyticsResult result = urlShortenerService.analytics();
+        return ResponseEntity.ok(new AnalyticsResponse(result.totalLinks(), result.totalRedirects()));
     }
 }

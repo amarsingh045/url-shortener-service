@@ -3,8 +3,6 @@ package com.schwab.application;
 import com.schwab.domain.ShortUrl;
 import com.schwab.domain.ShortUrlRepositoryPort;
 import com.schwab.dto.AnalyticsResponse;
-import com.schwab.dto.ShortenRequest;
-import com.schwab.dto.ShortenResponse;
 import com.schwab.exception.InvalidUrlException;
 import com.schwab.exception.ShortCodeAlreadyExistsException;
 import com.schwab.exception.ShortCodeNotFoundException;
@@ -40,10 +38,9 @@ class UrlShortenerServiceTest {
 
     @Test
     void shouldThrowInvalidUrlForMalformedInput() {
-        ShortenRequest request = new ShortenRequest();
-        request.setLongUrl("not-a-valid-url");
+        CreateShortUrlCommand command = new CreateShortUrlCommand("not-a-valid-url");
 
-        assertThrows(InvalidUrlException.class, () -> service.shorten(request));
+        assertThrows(InvalidUrlException.class, () -> service.shorten(command));
     }
 
     @Test
@@ -63,19 +60,18 @@ class UrlShortenerServiceTest {
         when(repository.count()).thenReturn(2L);
         when(repository.findAll()).thenReturn(List.of(first, second));
 
-        AnalyticsResponse response = service.analytics();
+        GetAnalyticsResult response = service.analytics();
 
-        assertEquals(2L, response.getTotalLinks());
-        assertEquals(7L, response.getTotalRedirects());
+        assertEquals(2L, response.totalLinks());
+        assertEquals(7L, response.totalRedirects());
     }
 
     @Test
     void fallbackShortenShouldThrowInvalidUrlException() {
-        ShortenRequest request = new ShortenRequest();
-        request.setLongUrl("https://example.com");
+        CreateShortUrlCommand command = new CreateShortUrlCommand("https://example.com");
 
         InvalidUrlException ex = assertThrows(InvalidUrlException.class,
-                () -> service.fallbackShorten(request, new RuntimeException("boom")));
+            () -> service.fallbackShorten(command, new RuntimeException("boom")));
 
         assertEquals("Service temporarily unavailable", ex.getMessage());
     }
@@ -90,10 +86,10 @@ class UrlShortenerServiceTest {
 
     @Test
     void fallbackAnalyticsShouldReturnZeroedMetrics() {
-        AnalyticsResponse response = service.fallbackAnalytics(new RuntimeException("boom"));
+        GetAnalyticsResult response = service.fallbackAnalytics(new RuntimeException("boom"));
 
-        assertEquals(0L, response.getTotalLinks());
-        assertEquals(0L, response.getTotalRedirects());
+        assertEquals(0L, response.totalLinks());
+        assertEquals(0L, response.totalRedirects());
     }
 
     @Test
@@ -101,12 +97,11 @@ class UrlShortenerServiceTest {
         when(repository.existsByShortCode(any())).thenReturn(false);
         when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ShortenRequest request = new ShortenRequest();
-        request.setLongUrl("https://example.com/ok");
+        CreateShortUrlCommand command = new CreateShortUrlCommand("https://example.com/ok");
 
-        ShortenResponse response = service.shorten(request);
+        CreateShortUrlResult response = service.shorten(command);
 
-        assertEquals("https://example.com/ok", response.getLongUrl());
+        assertEquals("https://example.com/ok", response.longUrl());
     }
 
     @Test
@@ -117,12 +112,11 @@ class UrlShortenerServiceTest {
                 .thenThrow(new ShortCodeAlreadyExistsException("Short code already exists", null))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        ShortenRequest request = new ShortenRequest();
-        request.setLongUrl("https://example.com/retry");
+        CreateShortUrlCommand command = new CreateShortUrlCommand("https://example.com/retry");
 
-        ShortenResponse response = service.shorten(request);
+        CreateShortUrlResult response = service.shorten(command);
 
-        assertEquals("https://example.com/retry", response.getLongUrl());
+        assertEquals("https://example.com/retry", response.longUrl());
         verify(repository, times(3)).save(any());
     }
 
@@ -131,11 +125,10 @@ class UrlShortenerServiceTest {
         when(repository.existsByShortCode(any())).thenReturn(false);
         when(repository.save(any())).thenThrow(new ShortCodeAlreadyExistsException("Short code already exists", null));
 
-        ShortenRequest request = new ShortenRequest();
-        request.setLongUrl("https://example.com/retry-fail");
+        CreateShortUrlCommand command = new CreateShortUrlCommand("https://example.com/retry-fail");
 
         ShortCodeAlreadyExistsException ex = assertThrows(ShortCodeAlreadyExistsException.class,
-                () -> service.shorten(request));
+            () -> service.shorten(command));
 
         assertEquals("Unable to allocate a unique short code", ex.getMessage());
         verify(repository, times(5)).save(any());

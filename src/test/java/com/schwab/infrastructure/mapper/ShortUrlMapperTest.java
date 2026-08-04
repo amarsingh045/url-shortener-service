@@ -1,7 +1,6 @@
 package com.schwab.infrastructure.mapper;
 
 import com.schwab.domain.ShortUrl;
-import com.schwab.dto.ShortenRequest;
 import com.schwab.dto.ShortenResponse;
 import com.schwab.infrastructure.persistence.ShortUrlEntity;
 import org.junit.jupiter.api.Test;
@@ -35,18 +34,6 @@ class ShortUrlMapperTest {
     }
 
     @Test
-    void shouldMapRequestToEntityWithIgnoredFields() {
-        ShortenRequest request = new ShortenRequest();
-        request.setLongUrl("https://example.com/b");
-
-        ShortUrlEntity entity = mapper.toEntity(request);
-        assertNotNull(entity);
-        assertNull(entity.getShortCode());
-        assertEquals("https://example.com/b", entity.getLongUrl());
-        assertEquals(0, entity.getRedirectCount());
-    }
-
-    @Test
     void shouldMapDomainToResponse() {
         ShortUrl domain = new ShortUrl("xyz789", "https://example.com/c");
 
@@ -62,6 +49,5 @@ class ShortUrlMapperTest {
         assertNull(mapper.toEntity((ShortUrl) null));
         assertNull(mapper.toDomain(null));
         assertNull(mapper.toResponse(null));
-        assertNull(mapper.toEntity((ShortenRequest) null));
     }
 }

@@ -2,9 +2,6 @@ package com.schwab.application;
 
 import com.schwab.domain.ShortUrl;
 import com.schwab.domain.ShortUrlRepositoryPort;
-import com.schwab.dto.AnalyticsResponse;
-import com.schwab.dto.ShortenRequest;
-import com.schwab.dto.ShortenResponse;
 import com.schwab.exception.InvalidUrlException;
 import com.schwab.exception.ShortCodeAlreadyExistsException;
 import com.schwab.exception.ShortCodeNotFoundException;
@@ -39,16 +36,16 @@ public class UrlShortenerService implements UrlShortenerUseCase {
     @CircuitBreaker(name = "shortenerCircuitBreaker", fallbackMethod = "fallbackShorten")
     @Bulkhead(name = "shortenerBulkhead")
     @Retry(name = "shortenerRetry")
-    public ShortenResponse shorten(ShortenRequest request) {
+    public CreateShortUrlResult shorten(CreateShortUrlCommand command) {
         shortenCounter.increment();
-        validateUrl(request.getLongUrl());
+        validateUrl(command.longUrl());
         ShortCodeAlreadyExistsException lastCollision = null;
         for (int attempt = 1; attempt <= MAX_SHORT_CODE_GENERATION_ATTEMPTS; attempt++) {
             String shortCode = generateUniqueShortCode();
-            ShortUrl shortUrl = new ShortUrl(shortCode, request.getLongUrl());
+            ShortUrl shortUrl = new ShortUrl(shortCode, command.longUrl());
             try {
                 repository.save(shortUrl);
-                return new ShortenResponse(shortCode, request.getLongUrl());
+                return new CreateShortUrlResult(shortCode, command.longUrl());
             } catch (ShortCodeAlreadyExistsException ex) {
                 lastCollision = ex;
             }
@@ -73,17 +70,17 @@ public class UrlShortenerService implements UrlShortenerUseCase {
     @CircuitBreaker(name = "shortenerCircuitBreaker", fallbackMethod = "fallbackAnalytics")
     @Bulkhead(name = "shortenerBulkhead")
     @Retry(name = "shortenerRetry")
-    public AnalyticsResponse analytics() {
+    public GetAnalyticsResult analytics() {
         analyticsCounter.increment();
         long totalLinks = repository.count();
         long totalRedirects = 0;
         for (ShortUrl shortUrl : repository.findAll()) {
             totalRedirects += shortUrl.getRedirectCount();
         }
-        return new AnalyticsResponse(totalLinks, totalRedirects);
+        return new GetAnalyticsResult(totalLinks, totalRedirects);
     }
 
-    public ShortenResponse fallbackShorten(ShortenRequest request, Throwable throwable) {
+    public CreateShortUrlResult fallbackShorten(CreateShortUrlCommand command, Throwable throwable) {
         if (throwable instanceof InvalidUrlException invalidUrlException) {
             throw invalidUrlException;
         }
@@ -97,8 +94,8 @@ public class UrlShortenerService implements UrlShortenerUseCase {
         throw new ShortCodeNotFoundException("Service temporarily unavailable");
     }
 
-    public AnalyticsResponse fallbackAnalytics(Throwable throwable) {
-        return new AnalyticsResponse(0, 0);
+    public GetAnalyticsResult fallbackAnalytics(Throwable throwable) {
+        return new GetAnalyticsResult(0, 0);
     }
 
     private void validateUrl(String url) {
